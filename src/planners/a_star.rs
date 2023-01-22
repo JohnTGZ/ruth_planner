@@ -19,9 +19,9 @@ pub fn generate_plan(
     let mut parents: HashMap<(u32, u32), (u32, u32)> = HashMap::new();
 
     // Movement cost from start to cell
-    let mut g_cost: Vec<u32> = vec![std::u32::MAX; gridmap.get_size()];
+    let mut g_cost: Vec<u32> = vec![std::u32::MAX; gridmap.get_cells().len()];
     // Movement cost from cell to goal
-    // let mut f_cost: Vec<u32> = vec![std::u32::MAX; gridmap.get_size()];
+    // let mut f_cost: Vec<u32> = vec![std::u32::MAX; gridmap.get_cells().len()];
 
     g_cost[gridmap.xy_to_idx(start_cell)] = 0;
     // f_cost[gridmap.xy_to_idx(start_cell)] = get_l2_cost(start_cell, goal_cell);

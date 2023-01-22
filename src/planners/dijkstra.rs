@@ -18,7 +18,7 @@ pub fn generate_plan(
     let mut closed_list: HashSet<(u32, u32)> = HashSet::new();
     let mut parents: HashMap<(u32, u32), (u32, u32)> = HashMap::new();
 
-    let mut g_cost: Vec<u32> = vec![std::u32::MAX; gridmap.get_size()];
+    let mut g_cost: Vec<u32> = vec![std::u32::MAX; gridmap.get_cells().len()];
 
     g_cost[gridmap.xy_to_idx(start_cell)] = 0;
     open_list.push(Reverse(Cell2D::new(

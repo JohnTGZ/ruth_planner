@@ -1,5 +1,5 @@
 # Ruth Planner (WIP)
-[Ru]st Pa[th] Planner aims to be a comprehensive collection of search-based path planning algorithms written in Rust.
+[Ru]st Pa[th] Planner aims to be a collection of search-based path planning algorithms written in Rust.
 This crate aims to use minimal external dependencies, except for visualization purposes.
 
 ## Implemented algorithms
@@ -15,13 +15,6 @@ This crate aims to use minimal external dependencies, except for visualization p
 
 ### A*
 <img src="test_maps/planners/a_star/test_plan4.png" width="250">
-
-## Roadmap
-1. Implement other algorithms (ARA*, D* Lite, Theta*)
-
-2. Optimize planners
-
-3. Generate animations for the path search.
 
 ## Testing
 ```rust 
