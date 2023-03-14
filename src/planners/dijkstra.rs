@@ -38,7 +38,6 @@ pub fn generate_plan(
 
         // Explore neighbors
         for nb_cell_pos in get_neighbors_8_con(cur_cell.pos, &gridmap) {
-
             if closed_list.contains(&nb_cell_pos) {
                 continue;
             }

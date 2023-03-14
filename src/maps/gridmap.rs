@@ -60,16 +60,16 @@ impl Gridmap {
     }
 
     pub fn flip_y_u32(&self, y: u32) -> u32 {
-      self.get_height() - 1 - y
+        self.get_height() - 1 - y
     }
 
     /// Get centroid of cell in meters in gridmap coordinate system,
     /// with the origin in the bottom left corner.
     pub fn get_cell_centroid(&self, xy: (u32, u32)) -> (f32, f32) {
-      (
-        (xy.0 as f32) * self.resolution + (self.resolution/2.0),
-        (xy.1 as f32) * self.resolution + (self.resolution/2.0),
-      )
+        (
+            (xy.0 as f32) * self.resolution + (self.resolution / 2.0),
+            (xy.1 as f32) * self.resolution + (self.resolution / 2.0),
+        )
     }
 
     // TODO: Use generic types

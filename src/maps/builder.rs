@@ -20,7 +20,7 @@ pub fn build_gridmap_from_pgm(file_path: &str) -> Option<Gridmap> {
 
     // 0 is black, 255 is white (free space)
     for (x, y, pixel) in img_grayscale.enumerate_pixels() {
-        gridmap.set_val_xy(pixel.0[0], (x, y));
+        gridmap.set_val_xy(255 - pixel.0[0], (x, y));
     }
 
     Some(gridmap)
@@ -47,10 +47,7 @@ pub fn build_gridmap_from_2d_arr(arr_map: &Vec<Vec<u8>>) -> Option<Gridmap> {
 
 /// Saves gridmap as PGM file
 pub fn save_gridmap(gridmap: &Gridmap, file_path: &str) -> () {
-    let (width, height) = (
-        gridmap.get_width(),
-        gridmap.get_height(),
-    );
+    let (width, height) = (gridmap.get_width(), gridmap.get_height());
 
     let mut imgbuf = GrayImage::new(width, height);
 
@@ -67,6 +64,7 @@ pub fn plot_gridmap<'a>(
     goal_cell: &'a (u32, u32),
     motion_plan: &'a MotionPlan,
     file_path: &'a str,
+    cell_size: &'a u32,
 ) -> () {
     let (width, height, resolution) = (
         gridmap.get_width(),
@@ -75,8 +73,8 @@ pub fn plot_gridmap<'a>(
     );
 
     let aspect_ratio = (width as f32) / (height as f32);
-    let img_width: u32 = 640;
-    let img_height: u32 = (640.0 / aspect_ratio) as u32;
+    let img_width: u32 = 1280;
+    let img_height: u32 = (img_width as f32 / aspect_ratio) as u32;
 
     let root = BitMapBackend::new(&file_path, (img_width, img_height)).into_drawing_area();
 
@@ -99,10 +97,19 @@ pub fn plot_gridmap<'a>(
         .draw()
         .unwrap();
 
+    let start_goal_cell_size = cell_size * 2;
+    let path_size = cell_size / 2;
+
     plot_obstacles(&mut chart, gridmap);
-    plot_start_and_goal(&mut chart, gridmap, start_cell, goal_cell);
-    plot_closed_list(&mut chart, gridmap, &motion_plan.closed_list);
-    plot_path(&mut chart, gridmap, &motion_plan.path);
+    plot_start_and_goal(
+        &mut chart,
+        gridmap,
+        start_cell,
+        goal_cell,
+        start_goal_cell_size,
+    );
+    plot_closed_list(&mut chart, gridmap, &motion_plan.closed_list, *cell_size);
+    plot_path(&mut chart, gridmap, &motion_plan.path, path_size);
 
     // Legend
     // chart.configure_series_labels()
@@ -138,18 +145,19 @@ pub fn plot_start_and_goal(
     gridmap: &Gridmap,
     start_cell: &(u32, u32),
     goal_cell: &(u32, u32),
+    cell_size: u32,
 ) {
     chart
         .draw_series([Circle::new(
             get_cell_centroid(gridmap, start_cell),
-            20,
+            cell_size,
             CYAN.filled(),
         )])
         .unwrap();
     chart
         .draw_series([Circle::new(
             get_cell_centroid(gridmap, goal_cell),
-            20,
+            cell_size,
             GREEN.filled(),
         )])
         .unwrap();
@@ -160,13 +168,14 @@ pub fn plot_closed_list(
     chart: &mut ChartContext<BitMapBackend, Cartesian2d<RangedCoordf32, RangedCoordf32>>,
     gridmap: &Gridmap,
     closed_list: &HashSet<(u32, u32)>,
+    cell_size: u32,
 ) {
     chart
         .draw_series(closed_list.iter().map(|xy| {
             Circle::new(
                 get_cell_centroid(gridmap, xy),
-                20,
-                RGBAColor(255, 255, 0, 0.5).filled(),
+                cell_size,
+                RGBAColor(255, 255, 0, 0.2).filled(),
             )
         }))
         .unwrap();
@@ -177,6 +186,7 @@ pub fn plot_path(
     chart: &mut ChartContext<BitMapBackend, Cartesian2d<RangedCoordf32, RangedCoordf32>>,
     gridmap: &Gridmap,
     path: &Vec<(u32, u32)>,
+    path_size: u32,
 ) {
     chart
         .draw_series(
@@ -184,7 +194,7 @@ pub fn plot_path(
                 path.iter().map(|xy| get_cell_centroid(gridmap, xy)),
                 BLUE.filled(),
             )
-            .point_size(10),
+            .point_size(path_size),
         )
         .unwrap();
 }
