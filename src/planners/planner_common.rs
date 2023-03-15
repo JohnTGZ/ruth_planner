@@ -1,5 +1,4 @@
 use crate::maps::gridmap::Gridmap;
-use std::cmp::max;
 use std::collections::{HashMap, HashSet};
 
 /// Contains the path from start to goal and the list of visited cells

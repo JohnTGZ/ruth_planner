@@ -9,6 +9,7 @@ pub use crate::planners::{
   dfs,
   dijkstra,
   a_star,
+  rrt,
 };
 
 pub mod maps;

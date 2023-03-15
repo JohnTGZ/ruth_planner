@@ -1,9 +1,8 @@
 mod common;
 
-use ruth_planner::*;
-
-use maps::builder;
-use planners;
+use ruth_planner::maps::builder;
+use ruth_planner::dfs::DFSPlanner;
+use ruth_planner::planners::planner_base::Planner;
 
 #[test]
 fn test_dfs_plan0() {
@@ -11,16 +10,10 @@ fn test_dfs_plan0() {
     let gridmap = builder::build_gridmap_from_2d_arr(&arr_map).unwrap();
     let (start_cell, goal_cell) = ((0, 4), (6, 4));
 
-    let motion_plan = planners::dfs::generate_plan(start_cell, goal_cell, &gridmap);
+    let mut planner = DFSPlanner::new(&gridmap);
+    planner.update_start_and_goal(start_cell, goal_cell);
 
-    // builder::plot_gridmap(
-    //     &gridmap,
-    //     &start_cell,
-    //     &goal_cell,
-    //     &motion_plan,
-    //     "test_maps/planners/dfs/test_plan0.png",
-    //     &30,
-    // );
+    let motion_plan = planner.generate_plan();
 
     assert_ne!(motion_plan.path.len(), 0);
 }
@@ -31,16 +24,10 @@ fn test_dfs_plan1() {
     let gridmap = builder::build_gridmap_from_2d_arr(&arr_map).unwrap();
     let (start_cell, goal_cell) = ((0, 9), (9, 0));
 
-    let motion_plan = planners::dfs::generate_plan(start_cell, goal_cell, &gridmap);
+    let mut planner = DFSPlanner::new(&gridmap);
+    planner.update_start_and_goal(start_cell, goal_cell);
 
-    // builder::plot_gridmap(
-    //     &gridmap,
-    //     &start_cell,
-    //     &goal_cell,
-    //     &motion_plan,
-    //     "test_maps/planners/dfs/test_plan1.png",
-    //     &30,
-    // );
+    let motion_plan = planner.generate_plan();
 
     assert_ne!(motion_plan.path.len(), 0);
 }
@@ -51,7 +38,10 @@ fn test_dfs_plan2() {
     let gridmap = builder::build_gridmap_from_2d_arr(&arr_map).unwrap();
     let (start_cell, goal_cell) = ((0, 9), (9, 0));
 
-    let motion_plan = planners::dfs::generate_plan(start_cell, goal_cell, &gridmap);
+    let mut planner = DFSPlanner::new(&gridmap);
+    planner.update_start_and_goal(start_cell, goal_cell);
+
+    let motion_plan = planner.generate_plan();
 
     assert_eq!(motion_plan.path.len(), 0);
 }
@@ -62,7 +52,10 @@ fn test_dfs_plan3() {
     let gridmap = builder::build_gridmap_from_2d_arr(&arr_map).unwrap();
     let (start_cell, goal_cell) = ((0, 9), (9, 0));
 
-    let motion_plan = planners::dfs::generate_plan(start_cell, goal_cell, &gridmap);
+    let mut planner = DFSPlanner::new(&gridmap);
+    planner.update_start_and_goal(start_cell, goal_cell);
+
+    let motion_plan = planner.generate_plan();
 
     builder::plot_gridmap(
         &gridmap,
@@ -82,8 +75,11 @@ fn test_dfs_plan4() {
     let gridmap = builder::build_gridmap_from_2d_arr(&arr_map).unwrap();
     let (start_cell, goal_cell) = ((0, 9), (5, 5));
 
-    let motion_plan = planners::dfs::generate_plan(start_cell, goal_cell, &gridmap);
+    let mut planner = DFSPlanner::new(&gridmap);
+    planner.update_start_and_goal(start_cell, goal_cell);
 
+    let motion_plan = planner.generate_plan();
+    
     builder::plot_gridmap(
         &gridmap,
         &start_cell,
