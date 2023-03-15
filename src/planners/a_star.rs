@@ -1,19 +1,18 @@
 use std::cmp::{Ordering, Reverse};
 use std::collections::{BinaryHeap, HashMap, HashSet};
 
-use super::planner_common::*;
 use super::planner_base::*;
+use super::planner_common::*;
 use crate::maps::gridmap::Gridmap;
 
 // A Star
-pub struct AStarPlanner{
+pub struct AStarPlanner {
     start: (u32, u32),
     goal: (u32, u32),
     gridmap: Gridmap,
 }
 
 impl Planner for AStarPlanner {
-
     fn new(gridmap: &Gridmap) -> AStarPlanner {
         AStarPlanner {
             start: (0, 0),
@@ -56,8 +55,8 @@ impl Planner for AStarPlanner {
                     continue;
                 }
 
-                let alt_g_cost =
-                    g_cost[self.gridmap.xy_to_idx(cur_cell.pos)] + get_l2_cost(cur_cell.pos, nb_cell_pos);
+                let alt_g_cost = g_cost[self.gridmap.xy_to_idx(cur_cell.pos)]
+                    + get_l2_cost(cur_cell.pos, nb_cell_pos);
 
                 if alt_g_cost < g_cost[self.gridmap.xy_to_idx(nb_cell_pos)] {
                     g_cost[self.gridmap.xy_to_idx(nb_cell_pos)] = alt_g_cost;
@@ -88,9 +87,7 @@ impl Planner for AStarPlanner {
         self.goal = goal;
         return true;
     }
-
 }
-
 
 #[derive(Eq)]
 struct Cell2D {

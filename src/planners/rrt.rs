@@ -1,73 +1,194 @@
-// use std::cmp::{Ordering, Reverse};
-// use std::collections::{BinaryHeap, HashMap, HashSet};
+use std::cmp::{Ordering, Reverse};
+use std::collections::{BinaryHeap, HashMap, HashSet};
 
-// use super::planner_common::*;
-// use crate::maps::gridmap::Gridmap;
+use super::planner_common::*;
+use super::planner_base::*;
+use crate::maps::gridmap::Gridmap;
 
-// use rand::{Rng, thread_rng};
-// use rand::rngs::ThreadRng;
-// use rand::distributions::Uniform;
+use rand::{Rng, thread_rng};
+use rand::rngs::ThreadRng;
+use rand::distributions::Uniform;
 
-// // RRT
+// RRT
+pub struct RRTPlanner{
+    start: (u32, u32),
+    goal: (u32, u32),
+    gridmap: Gridmap,
 
-// struct RRT
+    rng: ThreadRng,
+    x_samp_distr: Uniform<f32>,
+    y_samp_distr: Uniform<f32>,
 
-// /// Sample from uniform distribution
-// pub fn sample() {}
+    max_iter: usize,
+    goal_sample_rate: u32,
+    expand_dist: f32,
+    path_resolution: f32,
+}
 
-// /// Sample from uniform distribution within free space
-// pub fn sample_free(rng: &ThreadRng, x_distr: &Uniform<i32>, goal_sample_rate: u32) -> (i32, i32) {
-//     let x_rand: u32;
-//     if rng.gen_range(0..100) > goal_sample_rate {
-//         x_rand = rng.sample(x_distr)
-//     }
-//     else { // Sample goal point
-//         x_rand = 
-//     }
-//     return x_rand
-// }
+impl RRTPlanner {
+    pub fn set_parameters(&mut self, max_iter: usize, goal_sample_rate: u32, expand_dist: f32, path_resolution: f32) {
+        self.goal_sample_rate = goal_sample_rate;
+        self.expand_dist = expand_dist;
+        self.max_iter = max_iter;
+        self.path_resolution = path_resolution;
+    }
 
-// /// Returns the vertex in V that is "closest" to x in terms of a given distance fucntion
-// pub fn nearest(gridmap, x) {}
+    /// Sample from uniform distribution within free space
+    pub fn sample(&self) -> Cell2D {
+        let v_samp_pos: (f32, f32);
 
-// /// Returns the vertices in V that are contained in a ball of radius r centered at x
-// pub fn near(gridmap, x, r) {}
+        if self.rng.gen_range(0..100) > self.goal_sample_rate { // Sample random point in map at random
+            v_samp_pos = (self.rng.sample(self.x_samp_distr), self.rng.sample(self.y_samp_distr));
+            // Keep sampling until a traversable cell is obtained
+            while !self.gridmap.xy_is_traversable_f32(v_samp_pos){
+                v_samp_pos = (self.rng.sample(self.x_samp_distr), self.rng.sample(self.y_samp_distr));
+            }
+        }
+        else { // Sample goal point
+            v_samp_pos = (self.goal.0 as f32, self.goal.1 as f32);
+        }
+        return Cell2D::new(v_samp_pos);
+    }
 
-// /// Given 2 points, x and y. Returns a point z such that z is "closer" to y than x is. 
-// /// Point z returned by the function Steer will be such that z minimizes || z - y || while at the same time
-// /// maintaining || z - x || <= eta, for a prescribed eta > 0.
-// pub fn steer(x, y, eta: f32) {}
+    /// Returns the vertex in V that is "closest" to x in terms of a given distance fucntion
+    pub fn nearest(&self, tree: &Vec<Cell2D>, v_samp: Cell2D) -> Cell2D {
+        // // Get distances of every vertex in the tree from sample vertex v_samp
+        // let dists_from_v_samp: Vec<u32> = 
+        //     tree.into_iter().map(|&v| get_l2_cost(v, v_samp)).collect();
+        // // TODO: Optimize here by using built-in methods to retrieve the min index
+        // let min_idx = 
 
-// /// Given 2 points x,x' in X, this function returns True if the line segment between x and x' lies in X_free, and false otherwise.
-// pub fn obstacle_free() {}
+        // TODO: Check if minimum index is extracted
+        let min_idx = tree
+            .iter()
+            .enumerate()
+            .map(|(idx, cell)| (idx, get_l2_cost_f32(cell.pos, v_samp.pos)))
+            .max_by(|(_, a), (_,b)| b.partial_cmp(a).unwrap())
+            .map(|(index, _)| index)
+            .expect("Unable to get index of vertex within minimum distance to v_samp");
 
-// /// Retrieve a motion plan given start and goal location
-// pub fn generate_plan(
-//     start_cell: (u32, u32),
-//     goal_cell: (u32, u32),
-//     gridmap: &Gridmap,
-// ) -> MotionPlan {
-//     // Parameters
-//     let max_iter = 1000;
-//     let goal_sample_rate: u32 = 5; // Will sample goal 5% of the time
-    
-//     // Uniform distribution sampling
-//     let mut rng = thread_rng(); 
-//     let dist = rand::distributions::Uniform::new_inclusive(1, 100);
+        return tree[min_idx];
+    }
 
-//     let mut path: Vec<(u32, u32)> = Vec::new();
-//     let mut tree: Vec<(u32, u32)> = Vec::new();
-//     tree.push(start_cell);
+    // /// Returns the vertices in V that are contained in a ball of radius r centered at x
+    // pub fn near(&self, x, r) {}
 
-//     for i in 0..max_iter {
-//         let x_rand = sample_free(&rng, &dist, goal_sample_rate);
+    /// Given 2 points, x and y. Returns a point z such that z is "closer" to y than x is. 
+    /// Point z returned by the function Steer will be such that z minimizes || z - y || while at the same time
+    /// maintaining || z - x || <= eta, for a prescribed eta > 0.
+    pub fn steer(&self, v_x: Cell2D, v_y: Cell2D) -> Cell2D {
+        let mut v_new = Cell2D::new(v_x.pos);
 
-//         let x_nearest = nearest(&tree, x_rand);
+        let dist_to_y = get_l2_cost_f32(v_new.pos, v_y.pos);
+        let theta = get_angle(v_x.pos, v_y.pos);
 
-//         let x_new = steer(x_nearest, x_rand, expand_dist);
+        v_new.path.push(v_new.pos);
 
-//         if obstacle_free(x_nearest, x_new) {}
-//     }
+        let tmp_expand_dist = match self.expand_dist{
+            e_d if e_d <= dist_to_y => e_d,
+            _ => dist_to_y,
+        };
 
-//     return MotionPlan { path, closed_list };
-// }
+        let expand_itr = (tmp_expand_dist / self.path_resolution) as usize;
+
+        for _ in 0..expand_itr{
+            // Update position and append nodes to path
+            v_new.pos.0 = self.path_resolution * theta.cos();
+            v_new.pos.1 = self.path_resolution * theta.sin();
+            v_new.path.push(v_new.pos);
+        }
+
+        let dist_xy = get_l2_cost_f32(v_new.pos, v_y.pos);
+
+        // Add last position to path
+        if dist_to_y <= self.path_resolution{
+            v_new.path.push(v_y.pos);
+            v_new.pos = v_y.pos;
+        }
+
+        return v_new;
+    }
+
+    /// Given 2 points x,x' in X, this function returns True if the line segment between x and x' lies in X_free, and false otherwise.
+    pub fn obstacle_free() {}
+
+}
+
+impl Planner for RRTPlanner {
+
+    fn new(gridmap: &Gridmap) -> RRTPlanner {
+        // Uniform distribution sampling
+        let x_samp_distr: Uniform<f32> = rand::distributions::Uniform::new(0.0, gridmap.get_width() as f32);
+        let y_samp_distr: Uniform<f32> = rand::distributions::Uniform::new(0.0, gridmap.get_height() as f32);
+
+        RRTPlanner {
+            start: (0, 0),
+            goal: (0, 0),
+            gridmap: gridmap.clone(),
+            rng: thread_rng(),
+            x_samp_distr: x_samp_distr,
+            y_samp_distr: y_samp_distr,
+
+            max_iter: 500,
+            goal_sample_rate: 5, // Will sample goal 5% of the time
+            expand_dist: 500.0,
+            path_resolution: 1.0,
+        }
+    }
+
+    fn generate_plan(&self) -> MotionPlan {
+        let mut closed_list: HashSet<(u32, u32)> = HashSet::new();
+
+        let mut path: Vec<(u32, u32)> = Vec::new();
+
+        let mut tree: Vec<Cell2D> = Vec::new();
+        tree.push(Cell2D::new((self.start.0 as f32, self.start.1 as f32)));
+
+        for i in 0..self.max_iter {
+            let v_samp = self.sample();
+
+            let v_nearest = self.nearest(&tree, v_samp);
+
+            let v_new = self.steer(v_nearest, v_samp);
+
+            if self.obstacle_free(v_nearest, v_new) {
+                
+            }
+        }
+
+        return MotionPlan { path, closed_list };
+    }
+
+    fn update_gridmap(&mut self, gridmap: &Gridmap) -> bool {
+        self.gridmap = gridmap.clone();
+        return true;
+    }
+
+    fn update_start(&mut self, start: (u32, u32)) -> bool {
+        self.start = start;
+        return true;
+    }
+
+    fn update_goal(&mut self, goal: (u32, u32)) -> bool {
+        self.goal = goal;
+        return true;
+    }
+
+}
+
+struct Cell2D {
+    pub pos: (f32, f32),
+    pub path: Vec<(f32, f32)>,
+    pub parent: (f32, f32),
+}
+
+impl Cell2D {
+    fn new(pos: (f32, f32)) -> Cell2D {
+        Cell2D{ 
+            pos: pos,
+            path: Vec::new(),
+            // TODO: Change parent to a valid None value
+            parent: pos, 
+        }
+    }
+}

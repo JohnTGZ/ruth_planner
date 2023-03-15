@@ -125,9 +125,12 @@ impl Gridmap {
     }
 
     /// Check if cell at 2D position is traversable
-    // TODO: Change xy_in_freespace to xy_is_traversable
     pub fn xy_is_traversable(&self, pos: (u32, u32)) -> bool {
         self.idx_is_traversable(self.xy_to_idx(pos))
+    }
+
+    pub fn xy_is_traversable_f32(&self, pos: (f32, f32)) -> bool {
+        self.xy_is_traversable((pos.0 as u32, pos.1 as u32))
     }
 
     // /// Render the gripmap

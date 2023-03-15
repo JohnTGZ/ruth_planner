@@ -1,18 +1,17 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 
-use super::planner_common::*;
 use super::planner_base::*;
+use super::planner_common::*;
 use crate::maps::gridmap::Gridmap;
 
 // Breadth-First Search
-pub struct BFSPlanner{
+pub struct BFSPlanner {
     start: (u32, u32),
     goal: (u32, u32),
     gridmap: Gridmap,
 }
 
 impl Planner for BFSPlanner {
-
     fn new(gridmap: &Gridmap) -> BFSPlanner {
         BFSPlanner {
             start: (0, 0),
@@ -51,10 +50,7 @@ impl Planner for BFSPlanner {
             }
         }
 
-        return MotionPlan {
-            path: path,
-            closed_list: closed_list,
-        };
+        return MotionPlan { path, closed_list };
     }
 
     fn update_gridmap(&mut self, gridmap: &Gridmap) -> bool {
@@ -71,5 +67,4 @@ impl Planner for BFSPlanner {
         self.goal = goal;
         return true;
     }
-
 }

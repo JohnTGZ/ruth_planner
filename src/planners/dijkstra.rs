@@ -1,13 +1,13 @@
 use std::cmp::{Ordering, Reverse};
 use std::collections::{BinaryHeap, HashMap, HashSet};
 
-use super::planner_common::*;
 use super::planner_base::*;
+use super::planner_common::*;
 use crate::maps::gridmap::Gridmap;
 
 // Dijkstra
 
-pub struct DijkstraPlanner{
+pub struct DijkstraPlanner {
     start: (u32, u32),
     goal: (u32, u32),
     gridmap: Gridmap,
@@ -53,8 +53,8 @@ impl Planner for DijkstraPlanner {
                     continue;
                 }
 
-                let alt_g_cost =
-                    g_cost[self.gridmap.xy_to_idx(cur_cell.pos)] + get_l2_cost(cur_cell.pos, nb_cell_pos);
+                let alt_g_cost = g_cost[self.gridmap.xy_to_idx(cur_cell.pos)]
+                    + get_l2_cost(cur_cell.pos, nb_cell_pos);
 
                 if alt_g_cost < g_cost[self.gridmap.xy_to_idx(nb_cell_pos)] {
                     g_cost[self.gridmap.xy_to_idx(nb_cell_pos)] = alt_g_cost;
@@ -84,7 +84,6 @@ impl Planner for DijkstraPlanner {
         self.goal = goal;
         return true;
     }
-
 }
 
 #[derive(Eq)]

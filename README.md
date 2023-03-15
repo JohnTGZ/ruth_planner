@@ -3,6 +3,10 @@
 This crate aims to use minimal external dependencies, except for visualization purposes.
 
 # Search-Based Algorithms
+Cyan: Start cell
+Green: Goal cell
+Blue: Motion Path
+Yellow: Visited cells
 
 ### Breadth-First Search
 <img src="test_maps/planners/bfs/test_plan1.png" width="250">

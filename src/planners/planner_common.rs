@@ -133,11 +133,32 @@ pub fn trace_path(
 // Common methods to calculate costs
 
 /// Get the Euclidean (L2) Distance
+/// IMPORTANT: Unsigned int instead of float is returned. 
+/// The original float value is multipled by 100, leading to 
+/// a precision of 2 decimal places for the distance 
 pub fn get_l2_cost(pos_1: (u32, u32), pos_2: (u32, u32)) -> u32 {
     let dx = (pos_1.0 as i32 - pos_2.0 as i32).abs();
     let dy = (pos_1.1 as i32 - pos_2.1 as i32).abs();
 
     ((dx as f32).hypot(dy as f32) * 100.0) as u32
+}
+
+/// Get the absolute angle between 2 positions on a xy plane 
+/// IMPORTANT: Unsigned int instead of float is returned. 
+/// The original float value is multipled by 100, leading to 
+/// a precision of 2 decimal places for the distance 
+pub fn get_angle(pos_1: (f32, f32), pos_2: (f32, f32)) -> f32 {
+    let dx = (pos_1.0 - pos_2.0).abs();
+    let dy = (pos_1.1 - pos_2.1).abs();
+
+    dy.atan2(dx)
+}
+
+pub fn get_l2_cost_f32(pos_1: (f32, f32), pos_2: (f32, f32)) -> f32 {
+    let dx = (pos_1.0 - pos_2.0).abs();
+    let dy = (pos_1.1 - pos_2.1).abs();
+
+    dx.hypot(dy)
 }
 
 // /// Get the Manhattan Distance
