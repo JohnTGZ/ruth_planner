@@ -20,7 +20,7 @@ impl Planner for BFSPlanner {
         }
     }
 
-    fn generate_plan(&self) -> MotionPlan {
+    fn generate_plan(&mut self) -> MotionPlan {
         let mut path: Vec<(u32, u32)> = Vec::new();
 
         let mut open_list: VecDeque<(u32, u32)> = VecDeque::new();

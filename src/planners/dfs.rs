@@ -20,7 +20,7 @@ impl Planner for DFSPlanner {
         }
     }
 
-    fn generate_plan(&self) -> MotionPlan {
+    fn generate_plan(&mut self) -> MotionPlan {
         let mut path: Vec<(u32, u32)> = Vec::new();
 
         let mut open_list: Vec<(u32, u32)> = Vec::new();

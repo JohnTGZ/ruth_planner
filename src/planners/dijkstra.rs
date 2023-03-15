@@ -22,7 +22,7 @@ impl Planner for DijkstraPlanner {
         }
     }
 
-    fn generate_plan(&self) -> MotionPlan {
+    fn generate_plan(&mut self) -> MotionPlan {
         let mut path: Vec<(u32, u32)> = Vec::new();
 
         let mut open_list: BinaryHeap<Reverse<Cell2D>> = BinaryHeap::new();

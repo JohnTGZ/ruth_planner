@@ -5,7 +5,7 @@ pub trait Planner {
     fn new(gridmap: &Gridmap) -> Self;
 
     /// Retrieve a motion plan given start and goal location
-    fn generate_plan(&self) -> MotionPlan;
+    fn generate_plan(&mut self) -> MotionPlan;
 
     // Default method definitions
     fn update_start_and_goal(&mut self, start: (u32, u32), goal: (u32, u32)) -> bool {
