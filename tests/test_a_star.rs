@@ -1,9 +1,8 @@
 mod common;
 
-use ruth_planner::*;
-
-use maps::builder;
-use planners;
+use ruth_planner::maps::builder;
+use ruth_planner::a_star::AStarPlanner;
+use ruth_planner::planners::planner_base::Planner;
 
 #[test]
 fn test_a_star_plan0() {
@@ -11,16 +10,10 @@ fn test_a_star_plan0() {
     let gridmap = builder::build_gridmap_from_2d_arr(&arr_map).unwrap();
     let (start_cell, goal_cell) = ((0, 4), (6, 4));
 
-    let motion_plan = planners::a_star::generate_plan(start_cell, goal_cell, &gridmap);
+    let mut planner = AStarPlanner::new(&gridmap);
+    planner.update_start_and_goal(start_cell, goal_cell);
 
-    // builder::plot_gridmap(
-    //     &gridmap,
-    //     &start_cell,
-    //     &goal_cell,
-    //     &motion_plan,
-    //     "test_maps/planners/a_star/test_plan0.png",
-    //     &30,
-    // );
+    let motion_plan = planner.generate_plan();
 
     assert_ne!(motion_plan.path.len(), 0);
 }
@@ -31,16 +24,10 @@ fn test_a_star_plan1() {
     let gridmap = builder::build_gridmap_from_2d_arr(&arr_map).unwrap();
     let (start_cell, goal_cell) = ((0, 9), (9, 0));
 
-    let motion_plan = planners::a_star::generate_plan(start_cell, goal_cell, &gridmap);
+    let mut planner = AStarPlanner::new(&gridmap);
+    planner.update_start_and_goal(start_cell, goal_cell);
 
-    // builder::plot_gridmap(
-    //     &gridmap,
-    //     &start_cell,
-    //     &goal_cell,
-    //     &motion_plan,
-    //     "test_maps/planners/a_star/test_plan1.png",
-    //     &30,
-    // );
+    let motion_plan = planner.generate_plan();
 
     assert_ne!(motion_plan.path.len(), 0);
 }
@@ -51,7 +38,10 @@ fn test_a_star_plan2() {
     let gridmap = builder::build_gridmap_from_2d_arr(&arr_map).unwrap();
     let (start_cell, goal_cell) = ((0, 9), (9, 0));
 
-    let motion_plan = planners::a_star::generate_plan(start_cell, goal_cell, &gridmap);
+    let mut planner = AStarPlanner::new(&gridmap);
+    planner.update_start_and_goal(start_cell, goal_cell);
+
+    let motion_plan = planner.generate_plan();
 
     assert_eq!(motion_plan.path.len(), 0);
 }
@@ -62,17 +52,11 @@ fn test_a_star_plan3() {
     let gridmap = builder::build_gridmap_from_2d_arr(&arr_map).unwrap();
     let (start_cell, goal_cell) = ((0, 9), (9, 0));
 
-    let motion_plan = planners::a_star::generate_plan(start_cell, goal_cell, &gridmap);
+    let mut planner = AStarPlanner::new(&gridmap);
+    planner.update_start_and_goal(start_cell, goal_cell);
 
-    // builder::plot_gridmap(
-    //     &gridmap,
-    //     &start_cell,
-    //     &goal_cell,
-    //     &motion_plan,
-    //     "test_maps/planners/a_star/test_plan3.png",
-    //     &30,
-    // );
-
+    let motion_plan = planner.generate_plan();
+    
     assert_ne!(motion_plan.path.len(), 0);
 }
 
@@ -82,7 +66,10 @@ fn test_a_star_plan4() {
     let gridmap = builder::build_gridmap_from_2d_arr(&arr_map).unwrap();
     let (start_cell, goal_cell) = ((0, 9), (5, 5));
 
-    let motion_plan = planners::a_star::generate_plan(start_cell, goal_cell, &gridmap);
+    let mut planner = AStarPlanner::new(&gridmap);
+    planner.update_start_and_goal(start_cell, goal_cell);
+
+    let motion_plan = planner.generate_plan();
 
     builder::plot_gridmap(
         &gridmap,
@@ -103,7 +90,10 @@ fn test_a_star_plan_ros1() {
 
     let (start_cell, goal_cell) = ((165, 220), (230, 155));
 
-    let motion_plan = planners::a_star::generate_plan(start_cell, goal_cell, &gridmap);
+    let mut planner = AStarPlanner::new(&gridmap);
+    planner.update_start_and_goal(start_cell, goal_cell);
+
+    let motion_plan = planner.generate_plan();
 
     builder::plot_gridmap(
         &gridmap,
@@ -124,8 +114,11 @@ fn test_a_star_plan_ros2() {
 
     let (start_cell, goal_cell) = ((5, 5), (60, 35));
 
-    let motion_plan = planners::a_star::generate_plan(start_cell, goal_cell, &gridmap);
+    let mut planner = AStarPlanner::new(&gridmap);
+    planner.update_start_and_goal(start_cell, goal_cell);
 
+    let motion_plan = planner.generate_plan();
+    
     builder::plot_gridmap(
         &gridmap,
         &start_cell,
