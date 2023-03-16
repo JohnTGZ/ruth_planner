@@ -5,7 +5,29 @@ use std::collections::{HashMap, HashSet};
 #[derive(Debug)]
 pub struct MotionPlan {
     pub path: Vec<(u32, u32)>,
+    pub path_f32: Vec<(f32, f32)>,
     pub closed_list: HashSet<(u32, u32)>,
+    pub closed_list_f32: Vec<(f32, f32)>,
+}
+
+impl MotionPlan {
+    pub fn new(path: Vec<(u32, u32)>, closed_list: HashSet<(u32, u32)>) -> MotionPlan{
+        MotionPlan{
+            path: path,
+            path_f32: Vec::new(),
+            closed_list: closed_list,
+            closed_list_f32: Vec::new(),
+        }
+    }
+
+    pub fn new_f32(path: Vec<(f32, f32)>, closed_list_f32: Vec<(f32, f32)>) -> MotionPlan{
+        MotionPlan{
+            path: Vec::new(),
+            path_f32: path,
+            closed_list: HashSet::new(),
+            closed_list_f32: closed_list_f32,
+        }
+    }
 }
 
 /// Get 4 way connected neighbors (Up, Down, Left and Right)
@@ -148,8 +170,8 @@ pub fn get_l2_cost(pos_1: (u32, u32), pos_2: (u32, u32)) -> u32 {
 /// The original float value is multipled by 100, leading to 
 /// a precision of 2 decimal places for the distance 
 pub fn get_angle(pos_1: (f32, f32), pos_2: (f32, f32)) -> f32 {
-    let dx = (pos_1.0 - pos_2.0).abs();
-    let dy = (pos_1.1 - pos_2.1).abs();
+    let dx = pos_2.0 - pos_1.0 ;
+    let dy = pos_2.1 - pos_1.1 ;
 
     dy.atan2(dx)
 }

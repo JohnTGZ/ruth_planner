@@ -65,7 +65,7 @@ impl Gridmap {
 
     /// Get centroid of cell in meters in gridmap coordinate system,
     /// with the origin in the bottom left corner.
-    pub fn get_cell_centroid(&self, xy: (u32, u32)) -> (f32, f32) {
+    pub fn get_cell_centroid(&self, xy: (f32, f32)) -> (f32, f32) {
         (
             (xy.0 as f32) * self.resolution + (self.resolution / 2.0),
             (xy.1 as f32) * self.resolution + (self.resolution / 2.0),
@@ -130,6 +130,10 @@ impl Gridmap {
     }
 
     pub fn xy_is_traversable_f32(&self, pos: (f32, f32)) -> bool {
+        let pos_u32 = (pos.0.round() as u32, pos.1.round() as u32);
+        if !self.xy_in_map(pos_u32){
+            return false;
+        }
         self.xy_is_traversable((pos.0 as u32, pos.1 as u32))
     }
 

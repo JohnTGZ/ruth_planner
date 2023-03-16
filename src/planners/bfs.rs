@@ -50,7 +50,7 @@ impl Planner for BFSPlanner {
             }
         }
 
-        return MotionPlan { path, closed_list };
+        return MotionPlan::new(path, closed_list);
     }
 
     fn update_gridmap(&mut self, gridmap: &Gridmap) -> bool {

@@ -108,8 +108,25 @@ pub fn plot_gridmap<'a>(
         goal_cell,
         start_goal_cell_size,
     );
-    plot_closed_list(&mut chart, gridmap, &motion_plan.closed_list, *cell_size);
-    plot_path(&mut chart, gridmap, &motion_plan.path, path_size);
+    if !motion_plan.closed_list.is_empty() {
+        plot_closed_list(&mut chart, gridmap, &motion_plan.closed_list, *cell_size);
+    }
+    if !motion_plan.closed_list_f32.is_empty() {
+        plot_closed_list_f32(&mut chart, gridmap, &motion_plan.closed_list_f32, *cell_size);
+    }
+    else {
+        println!("Empty motion planning closed list provided to plotter!");
+    }
+
+    if !motion_plan.path.is_empty() {
+        plot_path(&mut chart, gridmap, &motion_plan.path, path_size);
+    }
+    else if !motion_plan.path_f32.is_empty() {
+        plot_path_f32(&mut chart, gridmap, &motion_plan.path_f32, path_size);
+    }
+    else {
+        println!("Empty motion planning path provided to plotter!");
+    }
 
     // Legend
     // chart.configure_series_labels()
@@ -149,14 +166,14 @@ pub fn plot_start_and_goal(
 ) {
     chart
         .draw_series([Circle::new(
-            get_cell_centroid(gridmap, start_cell),
+            get_cell_centroid(gridmap, &(start_cell.0 as f32, start_cell.1 as f32)),
             cell_size,
             CYAN.filled(),
         )])
         .unwrap();
     chart
         .draw_series([Circle::new(
-            get_cell_centroid(gridmap, goal_cell),
+            get_cell_centroid(gridmap, &(goal_cell.0 as f32, goal_cell.1 as f32)),
             cell_size,
             GREEN.filled(),
         )])
@@ -173,7 +190,7 @@ pub fn plot_closed_list(
     chart
         .draw_series(closed_list.iter().map(|xy| {
             Circle::new(
-                get_cell_centroid(gridmap, xy),
+                get_cell_centroid(gridmap, &(xy.0 as f32, xy.1 as f32)),
                 cell_size,
                 RGBAColor(255, 255, 0, 0.2).filled(),
             )
@@ -181,11 +198,47 @@ pub fn plot_closed_list(
         .unwrap();
 }
 
-/// Plot points from the final path    
+/// Plot Closed List (visited cells)
+pub fn plot_closed_list_f32(
+    chart: &mut ChartContext<BitMapBackend, Cartesian2d<RangedCoordf32, RangedCoordf32>>,
+    gridmap: &Gridmap,
+    closed_list: &Vec<(f32, f32)>,
+    cell_size: u32,
+) {
+    chart
+        .draw_series(closed_list.iter().map(|xy| {
+            Circle::new(
+                get_cell_centroid(gridmap, &(xy.0 as f32, xy.1 as f32)),
+                cell_size,
+                RGBAColor(255, 255, 0, 0.5).filled(),
+            )
+        }))
+        .unwrap();
+}
+
+/// Plot points of type (u32, u32) from the final path    
 pub fn plot_path(
     chart: &mut ChartContext<BitMapBackend, Cartesian2d<RangedCoordf32, RangedCoordf32>>,
     gridmap: &Gridmap,
     path: &Vec<(u32, u32)>,
+    path_size: u32,
+) {
+    chart
+        .draw_series(
+            LineSeries::new(
+                path.iter().map(|xy| get_cell_centroid(gridmap, &(xy.0 as f32, xy.1 as f32))),
+                BLUE.filled(),
+            )
+            .point_size(path_size),
+        )
+        .unwrap();
+}
+
+/// Plot points of type (f32, f32) from the final path    
+pub fn plot_path_f32(
+    chart: &mut ChartContext<BitMapBackend, Cartesian2d<RangedCoordf32, RangedCoordf32>>,
+    gridmap: &Gridmap,
+    path: &Vec<(f32, f32)>,
     path_size: u32,
 ) {
     chart
@@ -199,9 +252,10 @@ pub fn plot_path(
         .unwrap();
 }
 
+
 /// Get cell centroid in plotter coordinate system
-pub fn get_cell_centroid(gridmap: &Gridmap, xy: &(u32, u32)) -> (f32, f32) {
-    gridmap.get_cell_centroid((xy.0, gridmap.get_height() - 1 - xy.1))
+pub fn get_cell_centroid(gridmap: &Gridmap, xy: &(f32, f32)) -> (f32, f32) {
+    gridmap.get_cell_centroid((xy.0, gridmap.get_height() as f32 - 1.0 - xy.1))
 }
 
 /// Construct rectangle for obstacle cell
@@ -210,7 +264,7 @@ pub fn get_obs_rect(
     xy: &(u32, u32),
     cell_val: &u8,
 ) -> plotters::element::Rectangle<(f32, f32)> {
-    let (x_f, y_f) = get_cell_centroid(gridmap, xy);
+    let (x_f, y_f) = get_cell_centroid(gridmap, &(xy.0 as f32, xy.1 as f32));
     let cell_offset = gridmap.get_resolution() / 2.0;
 
     Rectangle::new(
