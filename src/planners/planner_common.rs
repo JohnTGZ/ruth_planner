@@ -1,6 +1,15 @@
 use crate::maps::gridmap::Gridmap;
 use std::collections::{HashMap, HashSet};
 
+/// Cell is unknown part of map
+pub const NO_INFORMATION: u8 = 255;
+/// Cell contains lethal obstacle
+pub const LETHAL_OBSTACLE: u8 = 254;
+/// Cell that has collision with some obstacle if the robot center is in it
+pub const INSCRIBED_INFLATED_OBSTACLE: u8 = 253;
+/// Cell is in freespace
+pub const FREE_SPACE: u8 = 0;
+
 /// Contains the path from start to goal and the list of visited cells
 #[derive(Debug)]
 pub struct MotionPlan {
@@ -40,25 +49,25 @@ pub fn get_neighbors_4_con(pos: (u32, u32), gridmap: &Gridmap) -> Vec<(u32, u32)
     let pos_1_non_max = pos.1 < gridmap.get_height() - 1;
 
     if pos_0_non_zero {
-        if gridmap.xy_is_traversable((pos.0 - 1, pos.1)) {
+        if gridmap.xy_is_traversable(&(pos.0 - 1, pos.1), &INSCRIBED_INFLATED_OBSTACLE) {
             neighbors.push((pos.0.checked_sub(1).unwrap(), pos.1)); // Left (x-1, y))
         }
     }
 
     if pos_0_non_max {
-        if gridmap.xy_is_traversable((pos.0 + 1, pos.1)) {
+        if gridmap.xy_is_traversable(&(pos.0 + 1, pos.1), &INSCRIBED_INFLATED_OBSTACLE) {
             neighbors.push((pos.0 + 1, pos.1)); // Right (x+1, y)
         }
     }
 
     if pos_1_non_zero {
-        if gridmap.xy_is_traversable((pos.0, pos.1 - 1)) {
+        if gridmap.xy_is_traversable(&(pos.0, pos.1 - 1), &INSCRIBED_INFLATED_OBSTACLE) {
             neighbors.push((pos.0, pos.1.checked_sub(1).unwrap())); // Top (x, y-1)
         }
     }
 
     if pos_1_non_max {
-        if gridmap.xy_is_traversable((pos.0, pos.1 + 1)) {
+        if gridmap.xy_is_traversable(&(pos.0, pos.1 + 1), &INSCRIBED_INFLATED_OBSTACLE) {
             neighbors.push((pos.0, pos.1 + 1)); // Bottom (x, y+1), (idx)
         }
     }
@@ -78,13 +87,13 @@ pub fn get_neighbors_8_con(pos: (u32, u32), gridmap: &Gridmap) -> Vec<(u32, u32)
     if pos_0_non_zero {
         let left = (pos.0 - 1, pos.1);
 
-        if gridmap.xy_is_traversable(left) {
+        if gridmap.xy_is_traversable(&left, &INSCRIBED_INFLATED_OBSTACLE) {
             neighbors.push(left); // Left (x-1, y))
         }
 
         if pos_1_non_zero {
             let top_left = (pos.0 - 1, pos.1 - 1);
-            if gridmap.xy_is_traversable(top_left) {
+            if gridmap.xy_is_traversable(&top_left, &INSCRIBED_INFLATED_OBSTACLE) {
                 neighbors.push(top_left); // Top-Left (x-1, y-1))
             }
         }
@@ -93,13 +102,13 @@ pub fn get_neighbors_8_con(pos: (u32, u32), gridmap: &Gridmap) -> Vec<(u32, u32)
     if pos_0_non_max {
         let right = (pos.0 + 1, pos.1);
 
-        if gridmap.xy_is_traversable(right) {
+        if gridmap.xy_is_traversable(&right, &INSCRIBED_INFLATED_OBSTACLE) {
             neighbors.push(right); // Right (x+1, y)
         }
 
         if pos_1_non_max {
             let bottom_right = (pos.0 + 1, pos.1 + 1);
-            if gridmap.xy_is_traversable(bottom_right) {
+            if gridmap.xy_is_traversable(&bottom_right, &INSCRIBED_INFLATED_OBSTACLE) {
                 neighbors.push(bottom_right); // Bottom-Right (x+1, y+1))
             }
         }
@@ -107,13 +116,13 @@ pub fn get_neighbors_8_con(pos: (u32, u32), gridmap: &Gridmap) -> Vec<(u32, u32)
 
     if pos_1_non_zero {
         let top = (pos.0, pos.1 - 1);
-        if gridmap.xy_is_traversable(top) {
+        if gridmap.xy_is_traversable(&top, &INSCRIBED_INFLATED_OBSTACLE) {
             neighbors.push(top); // Top (x, y-1)
         }
 
         if pos_0_non_max {
             let top_right = (pos.0 + 1, pos.1 - 1);
-            if gridmap.xy_is_traversable(top_right) {
+            if gridmap.xy_is_traversable(&top_right, &INSCRIBED_INFLATED_OBSTACLE) {
                 neighbors.push(top_right); // Top-Right (x+1, y-1))
             }
         }
@@ -121,13 +130,13 @@ pub fn get_neighbors_8_con(pos: (u32, u32), gridmap: &Gridmap) -> Vec<(u32, u32)
 
     if pos_1_non_max {
         let bottom = (pos.0, pos.1 + 1);
-        if gridmap.xy_is_traversable(bottom) {
+        if gridmap.xy_is_traversable(&bottom, &INSCRIBED_INFLATED_OBSTACLE) {
             neighbors.push(bottom); // Bottom (x, y+1), (idx)
         }
 
         if pos_0_non_zero {
             let bottom_left = (pos.0 - 1, pos.1 + 1);
-            if gridmap.xy_is_traversable(bottom_left) {
+            if gridmap.xy_is_traversable(&bottom_left, &INSCRIBED_INFLATED_OBSTACLE) {
                 neighbors.push(bottom_left); // Bottom-Left (x-1, y+1))
             }
         }

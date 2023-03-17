@@ -1,5 +1,7 @@
 // TODO: Add doc comments here
 
+use std::collections::HashSet;
+
 /// Cell is unknown part of map
 pub const NO_INFORMATION: u8 = 255;
 /// Cell contains lethal obstacle
@@ -100,13 +102,14 @@ impl Gridmap {
     }
 
     /// Check if cell at 1D index is within the map
+    /// Returns true if cell is within map, and false otherwise. 
     pub fn idx_in_map(&self, idx: usize) -> bool {
         idx < self.cells.len()
     }
 
     /// Check if cell at 1D index is traversable
-    pub fn idx_is_traversable(&self, idx: usize) -> bool {
-        self.get_val_idx(idx) < INSCRIBED_INFLATED_OBSTACLE
+    pub fn idx_is_traversable(&self, idx: usize, max_cost: &u8) -> bool {
+        self.get_val_idx(idx) < *max_cost
     }
 
     /// Set cell value at 2D position
@@ -119,22 +122,23 @@ impl Gridmap {
         self.get_val_idx(self.xy_to_idx(pos))
     }
 
-    /// Check if cell at 2D position is within the map
+    /// Check if cell at 2D position is within the map. 
+    /// Returns true if cell is within map, and false otherwise. 
     pub fn xy_in_map(&self, pos: (u32, u32)) -> bool {
         self.idx_in_map(self.xy_to_idx(pos))
     }
 
     /// Check if cell at 2D position is traversable
-    pub fn xy_is_traversable(&self, pos: (u32, u32)) -> bool {
-        self.idx_is_traversable(self.xy_to_idx(pos))
+    pub fn xy_is_traversable(&self, pos: &(u32, u32), max_cost: &u8) -> bool {
+        self.idx_is_traversable(self.xy_to_idx(*pos), max_cost)
     }
 
-    pub fn xy_is_traversable_f32(&self, pos: (f32, f32)) -> bool {
+    pub fn xy_is_traversable_f32(&self, pos: &(f32, f32), max_cost: &u8) -> bool {
         let pos_u32 = (pos.0.round() as u32, pos.1.round() as u32);
         if !self.xy_in_map(pos_u32){
             return false;
         }
-        self.xy_is_traversable((pos.0 as u32, pos.1 as u32))
+        self.xy_is_traversable(&pos_u32, max_cost)
     }
 
     // /// Render the gripmap
@@ -152,13 +156,133 @@ impl Gridmap {
     //   }
     // }
 
+    /// Render the gripmap
+    pub fn get_unique_values(&self) -> Vec<u8> {
+        self.cells.clone().into_iter()
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .collect()
+    }
+
     /// Convert from 2D position to 1D index
     pub fn xy_to_idx(&self, pos: (u32, u32)) -> usize {
         (pos.1 * (self.width) + pos.0) as usize
     }
 
+    /// Convert from 1D index to 2D position
     pub fn idx_to_xy(&self, idx: u32) -> (u32, u32) {
         (idx % self.width, idx / self.width)
+    }
+
+    /// Checks if the line from pos_a to pos_b is in collision with an obstacle
+    /// Returns true if obstacle is within the line, and false otherwise. 
+    pub fn check_collision_line_f32(&self, pos_a: &(f32, f32), pos_b: &(f32, f32), max_cost: &u8) -> bool {
+
+        let (dx, dy) = (pos_b.0 - pos_a.0, pos_b.1 - pos_a.1);
+
+        // Starting and ending position is the same
+        if dx.abs() <= f32::EPSILON && dy.abs() <= f32::EPSILON {
+            return false;
+        }
+
+        // x and y increment
+        let x_inc = (1.0 as f32).copysign(dx); 
+        let y_inc = (1.0 as f32).copysign(dy); 
+
+        // Get sign of gradient
+        let m_sign = match (dx,dy) {
+            (dx,dy) if (dx.is_sign_negative() != dy.is_sign_negative()) => -1.0,
+            _ => 1.0
+        };
+
+        // Get value of gradient (set to be between 0 and 1)
+        let mut m = f32::INFINITY;
+        if dx.abs() > f32::EPSILON { //Only calculate m if x is a positive value
+            m = dy/dx;
+            if dy.abs() > dx.abs(){ // if absolute value of m > 1, then invert it
+                m = 1.0/m;
+            }
+        }
+
+        // Value of x and y used to track if it has reached position b
+        let (mut x, mut x_track) = (pos_a.0, pos_a.0);
+        let (mut y, mut y_track) = (pos_a.1, pos_a.1);
+
+        if !self.xy_is_traversable_f32(&(x, y), max_cost) {
+            return true;
+        }
+        println!("  ({}, {})", x,y);
+
+        if dx.abs() <= f32::EPSILON {
+            let x_b = (pos_b.0).abs();
+
+            while x_track < x_b {
+                x_track += x_inc.abs();
+                x += x_inc;
+                if !self.xy_is_traversable_f32(&(x, y), max_cost) {
+                    return true;
+                }
+            }
+
+            println!("  ({}, {})", x,y);
+        }
+        else if dy.abs() <= f32::EPSILON {
+            let y_b = (pos_b.1).abs();
+
+            while y_track < y_b {
+                y_track += y_inc.abs();
+                y += y_inc;
+                if !self.xy_is_traversable_f32(&(x, y), max_cost) {
+                    return true;
+                }
+            }
+
+            println!("  ({}, {})", x,y);
+        }
+        else if dy.abs() > dx.abs() { // 1 < gradient < INF
+            let y_b = (pos_b.1).abs();
+
+            let mut err = 0.0;
+            
+            while y_track < y_b {
+                y_track += y_inc.abs();
+                y += y_inc;
+                if m_sign * (err + m) < 0.5 {
+                    err += m;
+                }
+                else {
+                    err += m - m_sign;
+                    x += x_inc;
+                }
+                if !self.xy_is_traversable_f32(&(x, y), max_cost) {
+                    return true;
+                }
+                println!("  ({}, {})", x,y);
+            }
+        }
+        else { // 0 < gradient < 1
+            let x_b = (pos_b.0).abs();
+
+            let mut err = 0.0;
+            
+            while x_track < x_b {
+                x_track += x_inc.abs();
+                x += x_inc;
+                if m_sign * (err + m) < 0.5 {
+                    err += m;
+                }
+                else {
+                    err += m - m_sign;
+                    y += y_inc;
+                }
+                if !self.xy_is_traversable_f32(&(x, y), max_cost) {
+                    return true;
+                }
+                println!("  ({}, {})", x,y);
+            }
+        }
+
+        return false;
     }
 }
 
@@ -197,12 +321,12 @@ mod tests {
 
         for i in 0..gridmap.get_cells().len() {
             assert_eq!(gridmap.get_val_idx(i), FREE_SPACE);
-            assert_eq!(gridmap.idx_is_traversable(i), true);
+            assert_eq!(gridmap.idx_is_traversable(i, &INSCRIBED_INFLATED_OBSTACLE), true);
         }
 
         gridmap.set_val_idx(INSCRIBED_INFLATED_OBSTACLE, 4);
         assert_eq!(gridmap.get_val_idx(4), INSCRIBED_INFLATED_OBSTACLE);
-        assert_eq!(gridmap.xy_is_traversable((0, 1)), false);
+        assert_eq!(gridmap.xy_is_traversable(&(0, 1), &INSCRIBED_INFLATED_OBSTACLE), false);
     }
 
     #[test]
@@ -221,5 +345,19 @@ mod tests {
         let mut gridmap = Gridmap::new(4, 6, 0.05);
 
         gridmap.set_val_idx(LETHAL_OBSTACLE, 24);
+    }
+
+    #[test]
+    fn test_check_collision_line_f32() {
+        let mut gridmap = Gridmap::new(10, 10, 0.05);
+        let mut collision = gridmap.check_collision_line_f32(&(0.0, 0.0), &(9.0, 9.0), &INSCRIBED_INFLATED_OBSTACLE);
+        assert_eq!(collision, false);
+
+        gridmap.set_val_xy(255, (3,3));
+        gridmap.set_val_xy(255, (4,2));
+        gridmap.set_val_xy(255, (3,2));
+        let mut collision = gridmap.check_collision_line_f32(&(0.0, 0.0), &(4.0, 3.0), &INSCRIBED_INFLATED_OBSTACLE);
+
+        assert_eq!(collision, true);
     }
 }

@@ -1,5 +1,5 @@
 // use std::cmp::{Ordering, Reverse};
-use std::collections::{HashSet, HashMap};
+use std::collections::HashMap;
 
 use super::planner_base::*;
 use super::planner_common::*;
@@ -8,6 +8,8 @@ use crate::maps::gridmap::Gridmap;
 use rand::distributions::Uniform;
 use rand::rngs::ThreadRng;
 use rand::{thread_rng, Rng};
+
+pub const MAX_COST: u8 = 50;
 
 // RRT
 pub struct RRTPlanner {
@@ -82,9 +84,9 @@ impl RRTPlanner {
 
         let expand_itr = (tmp_expand_dist / self.path_resolution) as usize;
 
-        println!("  dist_to_y: {dist_to_y}");
-        println!("  tmp_expand_dist: {tmp_expand_dist}");
-        println!("  expand_itr: {expand_itr}");
+        // println!("  dist_to_y: {dist_to_y}");
+        // println!("  tmp_expand_dist: {tmp_expand_dist}");
+        // println!("  expand_itr: {expand_itr}");
 
         for _ in 0..expand_itr {
             // Update position and append nodes to path
@@ -104,13 +106,16 @@ impl RRTPlanner {
         return v_new;
     }
 
-    /// Given 2 points x,x' in X, this function returns True if the line segment between x and x' lies in X_free, and false otherwise.
-    pub fn check_collision() {}
+    /// Given 2 points x,x' in X, this function returns True if the line segment between x and x' contains obstacles, and false otherwise.
+    pub fn check_collision(&self, node_from: &Node2D, node_to: &Node2D) -> bool {
+        self.gridmap
+            .check_collision_line_f32(&node_from.pos, &node_to.pos, &MAX_COST)
+    }
 
-    pub fn generate_path(&self, tree: &Tree) -> Vec<(f32, f32)>{
+    pub fn generate_path(&self, tree: &Tree) -> Vec<(f32, f32)> {
         let mut path: Vec<(f32, f32)> = Vec::new();
         path.push(self.goal_f32);
-        
+
         let mut cur_idx = tree.nodes.len() - 1;
         while let Some(parent_idx) = tree.get_parents(&cur_idx) {
             path.push(tree.get_node(cur_idx).pos);
@@ -118,7 +123,7 @@ impl RRTPlanner {
         }
         path.push(tree.get_node(cur_idx).pos);
 
-        return path
+        return path;
     }
 
     pub fn generate_closed_list(&self, tree: &Tree) -> Vec<(f32, f32)> {
@@ -128,8 +133,6 @@ impl RRTPlanner {
         }
         closed_list
     }
-
-
 }
 
 impl Planner for RRTPlanner {
@@ -159,48 +162,40 @@ impl Planner for RRTPlanner {
         }
     }
 
-
     fn generate_plan(&mut self) -> MotionPlan {
         let mut path: Vec<(f32, f32)> = Vec::new();
 
         let mut tree = Tree::new();
+        let goal_node = Node2D::new(self.goal_f32);
         tree.add_node(&Node2D::new(self.start_f32), None);
 
-        for i in 0..self.max_iter {
-            println!("Itr {i}");
+        for _ in 0..self.max_iter {
 
             let v_rand = self.sample();
 
             let v_nearest_idx = self.get_nearest_node_idx(&tree, &v_rand);
+            let v_nearest = tree.get_node(v_nearest_idx);
 
-            let v_new = self.steer(tree.get_node(v_nearest_idx), &v_rand);
+            let v_new = self.steer(v_nearest, &v_rand);
 
-            // TODO check if new node is traversable
-            if self.gridmap.xy_is_traversable_f32(v_new.pos) {
+            if self.gridmap.xy_is_traversable_f32(&v_new.pos, &MAX_COST)
+                && !self.check_collision(&v_nearest, &v_new)
+            {
                 tree.add_node(&v_new, Some(v_nearest_idx));
-                println!("  Added v_new");
             }
-
-            println!("  v_nearest: {:?} -> v_rand {:?} => v_new: {:?}", 
-                &tree.nodes[v_nearest_idx].pos, v_rand.pos, v_new.pos);
 
             // If distance from vertex to goal <= expand_dist
+            // Generate a final node v_final closer to the goal point
             if get_l2_cost_f32(tree.nodes.last().unwrap().pos, self.goal_f32) <= self.expand_dist {
-                // let v_final = self.steer(&tree.last().unwrap(), &Node2D::new(self.goal_f32));
-                
-                println!(" PATH FOUND! ");
-                path = self.generate_path(&tree);
-                break;
+                let v_final = self.steer(&tree.nodes.last().unwrap(), &goal_node);
 
-                // if self.check_collision(v_final){
-                //     self.generate_final_path();
-                //     break;
-                // }
+                if !self.check_collision(&v_final, &goal_node) {
+                    println!(" PATH FOUND! ");
+                    path = self.generate_path(&tree);
+                    break;
+                }
             }
         }
-
-        // println!(" GENERATING PATH ANYWAY! ");
-        // path = self.generate_path(&tree);
 
         let closed_list = self.generate_closed_list(&tree);
 
@@ -254,14 +249,14 @@ impl Tree {
     }
 
     fn get_nearest_node_idx(&self, cell_from: &Node2D) -> usize {
-        
         // // Get distances of every vertex in the tree from sample vertex v_samp
         // let dists_from_v_samp: Vec<u32> =
         //     tree.into_iter().map(|&v| get_l2_cost(v, v_samp)).collect();
         // // TODO: Optimize here by using built-in methods to retrieve the min index
         // let min_idx =
 
-        return self.nodes
+        return self
+            .nodes
             .iter()
             .enumerate()
             .map(|(idx, cell)| (idx, get_l2_cost_f32(cell.pos, cell_from.pos)))

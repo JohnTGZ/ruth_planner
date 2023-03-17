@@ -1,6 +1,7 @@
 # Ruth Planner (WIP)
 [Ru]st Pa[th] Planner aims to be a collection of search-based path planning algorithms written in Rust.
 This crate aims to use minimal external dependencies, except for visualization purposes.
+The current implementation assumes that the robot is a point mass.
 
 # Search-Based Algorithms
 Cyan: Start cell
@@ -20,6 +21,11 @@ Yellow: Visited cells
 ### A*
 <img src="test_maps/planners/a_star/test_plan_ros2.png" width="250">
 
+# Sampling-Based Algorithms
+
+### RRT
+<img src="test_maps/planners/rrt/test_plan4.png" width="250">
+
 # Testing
 ```rust 
 cargo test --show-output
@@ -28,7 +34,7 @@ cargo test --show-output
 # Roadmap
 
 1. Animation for motion planning
-2. Robots with size and shapes
+2. Robots represented by arbitrary shapes rather than a point mass
 
 # License
 
